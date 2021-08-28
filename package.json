@@ -1,0 +1,24 @@
+{
+  "name": "slack-testing-library",
+  "version": "1.0.0",
+  "description": "A mock server and library for testing interactive Slack apps",
+  "main": "src/slack-testing-library.ts",
+  "author": "Chris Hutchinson <chris_hutchinson@me.com>",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/jest": "^27.0.1",
+    "jest": "^27.1.0",
+    "ts-jest": "^27.0.5",
+    "typescript": "^4.4.2"
+  },
+  "dependencies": {
+    "@slack/types": "^2.2.0",
+    "@slack/web-api": "^6.4.0",
+    "cross-fetch": "^3.1.4",
+    "query-string": "^7.0.1"
+  }
+}
