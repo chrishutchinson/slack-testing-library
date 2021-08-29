@@ -1,7 +1,9 @@
 name: Publish and release
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - feature/release
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -29,4 +31,4 @@ jobs:
         run: npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
 
       - name: Run release command
-        run: yarn release
+        run: yarn release --dry-run
