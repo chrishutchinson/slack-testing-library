@@ -10,6 +10,9 @@
     "package.json",
     "README.md"
   ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
   "author": "Chris Hutchinson <chris_hutchinson@me.com>",
   "license": "MIT",
   "scripts": {
