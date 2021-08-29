@@ -7,12 +7,12 @@ import { InterceptedRequest } from "../slack-testing-library";
 
 export const startServer = ({
   port,
-  interceptedRequests,
+  getInterceptedRequests,
   setActiveView,
   storeRequest,
 }: {
   port: number;
-  interceptedRequests: InterceptedRequest[];
+  getInterceptedRequests: () => InterceptedRequest[];
   setActiveView: (view: View) => void;
   storeRequest: (request: {
     url: string;
@@ -56,17 +56,17 @@ export const startServer = ({
         }
       }
 
-      const interceptdRequest = interceptedRequests.find(
+      const interceptedRequest = getInterceptedRequests().find(
         (r) => r.url === req.url
       );
 
-      if (interceptdRequest) {
+      if (interceptedRequest) {
         res.writeHead(200, {
           "Content-Type": "application/json",
           "X-Powered-By": "Slack Testing Framework",
         });
 
-        const interceptedResponse = await interceptdRequest.intercept();
+        const interceptedResponse = await interceptedRequest.intercept();
 
         res.end(
           JSON.stringify({

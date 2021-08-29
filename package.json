@@ -4,6 +4,11 @@
   "description": "A mock server and library for testing interactive Slack apps",
   "main": "dist/slack-testing-library.js",
   "types": "dist/slack-testing-library.d.ts",
+  "files": [
+    "dist",
+    "package.json",
+    "README.md"
+  ],
   "author": "Chris Hutchinson <chris_hutchinson@me.com>",
   "license": "MIT",
   "scripts": {
