@@ -1,3 +1,5 @@
+### [1.0.1](https://github.com/chrishutchinson/slack-testing-library/compare/1.0.0...1.0.1) (2021-08-29)
+
 ## 1.0.0 (2021-08-29)
 
 
