@@ -83,7 +83,7 @@ export class SlackTestingLibrary {
       setActiveView: (view: View) => {
         this.activeView = view;
       },
-      interceptedRequests: this.interceptedRequests,
+      getInterceptedRequests: () => this.interceptedRequests,
       storeRequest: (request: {
         url: string;
         data: Record<string, string | string[] | null>;

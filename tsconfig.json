@@ -1,15 +1,17 @@
 {
   "compilerOptions": {
     "incremental": true,
+    "outDir": "dist",
     "target": "es5",
     "module": "commonjs",
     "allowJs": false,
-    "emitDeclarationOnly": true,
     "declaration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "noImplicitAny": true,
     "skipLibCheck": true
-  }
+  },
+  "include": ["src"],
+  "exclude": ["src/__tests__"]
 }

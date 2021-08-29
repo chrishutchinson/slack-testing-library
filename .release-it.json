@@ -1,0 +1,18 @@
+{
+  "git": {
+    "commitMessage": "chore: release v${version} [skip ci]",
+    "changelog": true
+  },
+  "github": {
+    "release": true
+  },
+  "npm": {
+    "skipChecks": true
+  },
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "preset": "conventionalcommits",
+      "infile": "CHANGELOG.md"
+    }
+  }
+}
