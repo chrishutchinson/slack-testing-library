@@ -1,5 +1,12 @@
 ### [1.0.1](https://github.com/chrishutchinson/slack-testing-library/compare/1.0.0...1.0.1) (2021-08-29)
 
+
+### Bug Fixes
+
+* tidy up some typos in the README ([#3](https://github.com/chrishutchinson/slack-testing-library/issues/3)) ([942ed39](https://github.com/chrishutchinson/slack-testing-library/commit/942ed392900e350b6b05d9f4c80b4448bd53d948))
+
+### [1.0.1](https://github.com/chrishutchinson/slack-testing-library/compare/1.0.0...1.0.1) (2021-08-29)
+
 ## 1.0.0 (2021-08-29)
 
 
