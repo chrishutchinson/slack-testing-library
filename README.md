@@ -4,7 +4,17 @@
 
 ## Installation
 
-Coming soon via `npm`.
+```bash
+# NPM
+npm install --save-dev slack-testing-library
+```
+
+OR
+
+```bash
+# Yarn
+yarn add --dev slack-testing-library
+```
 
 ## How it works
 
@@ -14,20 +24,32 @@ It is designed to use simple methods that describe how real users will interact 
 
 ## Getting started
 
-1. Import the library and initialize an instance of Slack Testing Library at the top of your tests:
+1. Set up your API server to route Slack API requests to the Slack Testing Library intercept server
+
+```ts
+import { WebClient } from "@slack/web-api";
+
+return new WebClient(botToken, {
+  slackApiUrl: "http://localhost:8123/slack/api",
+});
+```
+
+> Note: if you pass a custom `port` value to the `SlackTestingLibrary` constructor, change the port provided here in the `slackApiUrl`.
+
+2. Import the library and initialize an instance of Slack Testing Library at the top of your tests:
 
    ```ts
    import { SlackTestingLibrary } from "slack-testing-library";
 
    const sl = new SlackTestingLibrary({
-     // This is the path to the URL that handles Slack events
+     // This is your URL + path to your API server that handles Slack events
      baseUrl: "http://localhost:3000/api/event",
    });
    ```
 
    > Note: you'll need to have started your application server before running your tests.
 
-2. Configure your test suite to start and stop the Slack Testing Library server:
+3. Configure your test suite to start and stop the Slack Testing Library server:
 
    ```ts
    describe("Your test suite...", () => {
@@ -50,7 +72,7 @@ It is designed to use simple methods that describe how real users will interact 
    });
    ```
 
-3. Test your Slack app
+4. Test your Slack app
 
    ```ts
    it("should show a refresh button on the app home screen", async () => {
@@ -63,11 +85,11 @@ It is designed to use simple methods that describe how real users will interact 
 
 ### Setup and teardown
 
-#### `init()`
+#### `init(): Promise<void>`
 
 You will need to do this before all your tests start, to kick off the Slack Testing Library server. It's easiest to do this using the `beforeAll` hook.
 
-#### `teardown()`
+#### `teardown(): Promise<void>`
 
 You will need to do this after all your tests have run. It's easiest to do this using the `afterAll` hook.
 
@@ -75,7 +97,7 @@ You will need to do this after all your tests have run. It's easiest to do this 
 
 Sometimes you'll want to provide custom responses from Slack API calls. To do so, you can use the `intercept()` method, which allows you to provide a custom response from Slack.
 
-#### `intercept()`
+#### `intercept(): void`
 
 In this example, we intercept the `conversations.info` API call and retrn a custom response, forcing an error. This allows us to then test the error handling behaviour of our application.
 
@@ -91,7 +113,7 @@ sl.intercept("conversations.info", () => ({
 
 ### Navigation
 
-#### `openHome()`
+#### `openHome(): Promise<void>`
 
 This triggers the `app_home_opened` event, and waits for a `views.publish` request from your application server.
 
@@ -118,22 +140,22 @@ sl.actAs({
 
 ### Finding elements and interacting with them
 
-#### `getByText()`
+#### `getByText(): Promise<void>`
 
 This allows you to find a specific string or piece of text within a the current active view (e.g. after your app has called `views.publish` for the app home).
 
 ```ts
 // This would look for any text block in the active view containing the words "Hello, world!". This would fail if the text could not be found
-sl.getByText("Hello, world!");
+await sl.getByText("Hello, world!");
 ```
 
 > Note: At the moment this is limited to "section" and "header" blocks. In future this will expand to include support for looking inside messages, ephemeral messages, and other elements (including buttons and input controls).
 
-#### `interactWith()`
+#### `interactWith(): Promise<void>`
 
 This allows you to find an interactive element (e.g. buttons) and interact with it.
 
 ```ts
 // This would click the button with the text "Refresh", and fail if the button could not be found
-sl.interactWith("button", "Refresh");
+await sl.interactWith("button", "Refresh");
 ```
