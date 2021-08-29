@@ -2,7 +2,7 @@ name: Publish and release
 on:
   push:
     branches:
-      - main
+      - feature/publish-from-actions
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -40,8 +40,8 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Run release command
-        run: yarn release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # - name: Run release command
+      #   run: yarn release
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
