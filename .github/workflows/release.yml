@@ -2,7 +2,7 @@ name: Publish and release
 on:
   push:
     branches:
-      - feature/publish-from-actions
+      - fix/publish-from-actions
 jobs:
   release:
     runs-on: ubuntu-latest
