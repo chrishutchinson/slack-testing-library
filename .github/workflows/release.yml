@@ -31,7 +31,7 @@ jobs:
         run: yarn build
 
       - name: Setup .npmrc file
-        run: npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
+        run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
