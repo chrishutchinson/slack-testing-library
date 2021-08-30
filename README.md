@@ -22,6 +22,10 @@ Slack Testing Library allows you to run integration tests against your Slack app
 
 It is designed to use simple methods that describe how real users will interact with your Slack app (e.g. `openHome()` or `interactWith("button")`), helping you to test the expected behaviour of your application, not the implementation details.
 
+### Active screen
+
+Slack Testing Library maintains an understanding of the currently active screen, just like a user in Slack would. By having an 'active screen', interaction and assertions can be made against that screen. Using methods like `openHome()` or `openChannel()` will change the active screen accordingly.
+
 ## Getting started
 
 1. Set up your API server to route Slack API requests to the Slack Testing Library intercept server
@@ -115,7 +119,7 @@ sl.intercept("conversations.info", () => ({
 
 #### `openHome(): Promise<void>`
 
-This triggers the `app_home_opened` event, and waits for a `views.publish` request from your application server.
+This triggers the `app_home_opened` event, and waits for a `views.publish` request from your application server. The [active screen](#active-scren) will be set to the App Home.
 
 > Note: This method requires an actor to be passed to the `SlackTestingLibrary` initializer, or via the `actAs` method before your test is run.
 
@@ -138,6 +142,26 @@ sl.actAs({
 });
 ```
 
+#### `openChannel(channelId: string): Promise<void>`
+
+This sets the active screen to be the channel with the given ID. See more about [setting the active screen](#active-scren).
+
+#### `mentionApp({ channelId: string }): Promise<void>`
+
+This mentions the current app (bot ID can be configured in the `SlackTestingLibrary` initializer) in the given channel. This can be useful when combined with the `openChannel()` method, to open the channel and mention the app, and asserting on a response message.
+
+Example usage:
+
+```ts
+sl.openChannel(channelId);
+
+await sl.mentionApp({
+  channelId,
+});
+
+await sl.getByText("Some text");
+```
+
 ### Finding elements and interacting with them
 
 #### `getByText(): Promise<void>`
@@ -149,7 +173,7 @@ This allows you to find a specific string or piece of text within a the current 
 await sl.getByText("Hello, world!");
 ```
 
-> Note: At the moment this is limited to "section" and "header" blocks. In future this will expand to include support for looking inside messages, ephemeral messages, and other elements (including buttons and input controls).
+> Note: At the moment this is limited to "section" and "header" blocks, and can only look at the App Home view, or within standard messages in channels.
 
 #### `interactWith(): Promise<void>`
 
@@ -159,3 +183,26 @@ This allows you to find an interactive element (e.g. buttons) and interact with 
 // This would click the button with the text "Refresh", and fail if the button could not be found
 await sl.interactWith("button", "Refresh");
 ```
+
+## Fixtures
+
+Slack Testing Library ships with some helper methods for generating common fixture data, useful for mocking out Slack responses.
+
+### `SlackTestingLibrary.fixtures.buildChannel(overrides: Partial<SlackChannel>): SlackChannel`
+
+This builds a Slack Channel, useful for responding to `conversations.info` requests.
+
+Example usage:
+
+```ts
+sl.intercept("conversations.info", () => ({
+  channel: SlackTestingLibrary.fixtures.buildChannel({
+    name: "my-custom-private-channel",
+    is_private: true,
+  }),
+}));
+```
+
+### `SlackTestingLibrary.fixtures.buildTeam(overrides: Partial<SlackTeam>): SlackTeam`
+
+This builds a Slack Team or Workspace, useful for responding to `team.info` requests.

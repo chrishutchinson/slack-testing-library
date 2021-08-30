@@ -1,4 +1,4 @@
-import { SlackChannel } from "./types";
+import { SlackChannel, SlackTeam } from "./types";
 
 export class SlackTestingLibraryFixtureGenerator {
   static buildChannel(overrides: Partial<SlackChannel> = {}): SlackChannel {
@@ -38,6 +38,14 @@ export class SlackTestingLibraryFixtureGenerator {
         last_set: 0,
       },
       unlinked: 0,
+      ...overrides,
+    };
+  }
+
+  static buildTeam(overrides: Partial<SlackTeam> = {}): SlackTeam {
+    return {
+      id: "T12345678",
+      name: "team-name",
       ...overrides,
     };
   }

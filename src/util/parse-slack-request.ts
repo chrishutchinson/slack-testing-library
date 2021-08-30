@@ -1,19 +1,58 @@
-import { View } from "@slack/types";
+import { KnownBlock, View } from "@slack/types";
+
+const asSingular = (item: string | string[]) => {
+  if (Array.isArray(item)) {
+    return item[0];
+  }
+
+  return item;
+};
 
 export const parseSlackRequest = (
   url: string,
   data: Record<string, string | string[] | null>
-) => {
+):
+  | {
+      type: "view";
+      view: View;
+    }
+  | {
+      type: "message";
+      channel: string;
+      message: {
+        blocks: KnownBlock[];
+        text: string;
+      };
+    }
+  | {
+      type: "unknown";
+    } => {
   switch (url) {
     case "/slack/api/views.publish":
+      if (!data.view || data.view.length === 0) {
+        throw new Error("Invalid request for `views.publish`");
+      }
+
       return {
-        view: data.view
-          ? (JSON.parse(
-              Array.isArray(data.view) ? data.view[0] : data.view
-            ) as View)
-          : null,
+        type: "view",
+        view: JSON.parse(asSingular(data.view)) as View,
+      };
+    case "/slack/api/chat.postMessage":
+      if (!data.channel || data.channel.length === 0) {
+        throw new Error("Invalid request for `chat.postMessage`");
+      }
+
+      return {
+        type: "message",
+        channel: asSingular(data.channel),
+        message: {
+          blocks: JSON.parse(asSingular(data.blocks || "[]")) as KnownBlock[],
+          text: asSingular(data.text || ""),
+        },
       };
     default:
-      return {};
+      return {
+        type: "unknown",
+      };
   }
 };

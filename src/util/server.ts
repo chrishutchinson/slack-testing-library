@@ -4,16 +4,19 @@ import queryString from "query-string";
 
 import { parseSlackRequest } from "./parse-slack-request";
 import { InterceptedRequest } from "../slack-testing-library";
+import { Message } from "@slack/web-api/dist/response/ChatPostMessageResponse";
 
 export const startServer = ({
   port,
   getInterceptedRequests,
-  setActiveView,
+  onViewChange,
+  onRecieveMessage,
   storeRequest,
 }: {
   port: number;
   getInterceptedRequests: () => InterceptedRequest[];
-  setActiveView: (view: View) => void;
+  onViewChange: (view: View) => void;
+  onRecieveMessage: (message: Message, channelId: string) => void;
   storeRequest: (request: {
     url: string;
     data: Record<string, string | string[] | null>;
@@ -49,10 +52,20 @@ export const startServer = ({
           data,
         });
 
-        const { view } = parseSlackRequest(req.url, data);
+        const { type, ...requestData } = parseSlackRequest(req.url, data);
 
-        if (view) {
-          setActiveView(view);
+        switch (type) {
+          case "view":
+            onViewChange((requestData as any).view as View);
+            break;
+          case "message":
+            onRecieveMessage(
+              (requestData as any).message as Message,
+              (requestData as any).channel as string
+            );
+            break;
+          case "unknown":
+            break;
         }
       }
 
