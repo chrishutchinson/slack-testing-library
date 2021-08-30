@@ -1,12 +1,7 @@
-import { createServer, Server } from "http";
+import { Server } from "http";
 import fetch from "cross-fetch";
-import {
-  Button,
-  KnownBlock,
-  SectionBlock,
-  HeaderBlock,
-  View,
-} from "@slack/types";
+import { Button, KnownBlock, View } from "@slack/types";
+import { Message } from "@slack/web-api/dist/response/ChatPostMessageResponse";
 import { WebAPICallResult } from "@slack/web-api";
 
 import { AppMentionEvent, SlackEvent } from "./types";
@@ -14,7 +9,6 @@ import { delay } from "./util/delay";
 import { parseSlackRequest } from "./util/parse-slack-request";
 import { SlackTestingLibraryFixtureGenerator } from "./fixture-generator";
 import { startServer } from "./util/server";
-import { Message } from "@slack/web-api/dist/response/ChatPostMessageResponse";
 import { findTextInBlock } from "./util/find-text-in-block";
 
 interface SlackTestConstructorOptions {
@@ -193,6 +187,53 @@ export class SlackTestingLibrary {
     return this.checkRequestLog(matcher, retriesRemaining - 1);
   }
 
+  private async checkMessageLog(
+    matcher: Partial<{
+      channel: string;
+      text: string;
+    }>,
+    retriesRemaining = 3
+  ): Promise<MessageLogItem[]> {
+    if (retriesRemaining === 0) {
+      throw new Error("Message log never populated");
+    }
+
+    if (this.messageLog.length > 0) {
+      return this.messageLog.filter(({ channelId, message }) => {
+        if (channelId !== matcher.channel) {
+          return false;
+        }
+
+        let matches = false;
+
+        if (matcher.text) {
+          if (message.blocks) {
+            const matchingElement = message.blocks.find((b) => {
+              return b.text?.text?.includes(matcher.text as string);
+            });
+
+            if (matchingElement) {
+              matches = true;
+            }
+          }
+
+          if (message.text) {
+            matches = matches || message.text.includes(matcher.text as string);
+          }
+        }
+
+        return matches;
+      });
+    }
+
+    await delay(
+      // Delay time increases as more retries are attempted
+      Math.max(Math.min(2000 * Math.pow(0.5, retriesRemaining), 1000), 250)
+    );
+
+    return this.checkMessageLog(matcher, retriesRemaining - 1);
+  }
+
   private checkServerStatus() {
     if (!this.server) {
       throw new Error(
@@ -332,31 +373,12 @@ export class SlackTestingLibrary {
     if (this.activeScreen.type === "channel") {
       const activeChannelId = this.activeScreen.channelId;
 
-      const matchingMessage = this.messageLog.find(({ message, channelId }) => {
-        if (channelId !== activeChannelId) {
-          return false;
-        }
-
-        let matches = false;
-
-        if (message.blocks) {
-          const matchingElement = message.blocks.find((b) => {
-            return b.text?.text?.includes(text);
-          });
-
-          if (matchingElement) {
-            matches = true;
-          }
-        }
-
-        if (message.text) {
-          matches = matches || message.text.includes(text);
-        }
-
-        return matches;
+      const matchingMessages = await this.checkMessageLog({
+        channel: activeChannelId,
+        text,
       });
 
-      if (!matchingMessage) {
+      if (matchingMessages.length === 0) {
         throw new Error(
           `Unable to find the text "${text}" in the current channel`
         );
@@ -416,9 +438,12 @@ export class SlackTestingLibrary {
    */
   reset() {
     this.interceptedRequests = [];
+
     this.requestLog = [];
     this.messageLog = [];
+
     this.activeScreen = null;
+
     this.options = {
       ...this.options,
       actor: this.initialOptions.actor,
