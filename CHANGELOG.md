@@ -1,3 +1,10 @@
+## [1.2.0](https://github.com/chrishutchinson/slack-testing-library/compare/1.1.0...1.2.0) (2021-08-30)
+
+
+### Features
+
+* add support for opening channels and asserting on messages ([#5](https://github.com/chrishutchinson/slack-testing-library/issues/5)) ([5ec4c09](https://github.com/chrishutchinson/slack-testing-library/commit/5ec4c092297eb3a1798f14d45d72b153331a4a4c))
+
 ## [1.1.0](https://github.com/chrishutchinson/slack-testing-library/compare/1.0.3...1.1.0) (2021-08-30)
 
 
