@@ -1,3 +1,10 @@
+## [1.1.0](https://github.com/chrishutchinson/slack-testing-library/compare/1.0.3...1.1.0) (2021-08-30)
+
+
+### Features
+
+* add an example 'Hello, world' app with tests ([#4](https://github.com/chrishutchinson/slack-testing-library/issues/4)) ([2d9b1c1](https://github.com/chrishutchinson/slack-testing-library/commit/2d9b1c1d9e37dd5a662f54c1248945442217777b))
+
 ### [1.0.3](https://github.com/chrishutchinson/slack-testing-library/compare/1.0.2...1.0.3) (2021-08-29)
 
 
