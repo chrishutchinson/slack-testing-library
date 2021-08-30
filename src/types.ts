@@ -28,7 +28,26 @@ export type SlackChannel = {
   num_members: number;
 };
 
-export interface SlackEvent {
+export type SlackTeam = {
+  id: string;
+  name: string;
+};
+
+interface BaseSlackEvent {
   type: string;
-  event_ts: string;
+  event_ts: number;
+}
+export interface SlackEvent<T extends BaseSlackEvent> {
+  type: string;
+  team_id: string;
+  event: T;
+}
+
+export interface AppMentionEvent extends BaseSlackEvent {
+  type: "app_mention";
+  user: string;
+  text: string;
+  ts: string;
+  team: string;
+  channel: string;
 }

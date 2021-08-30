@@ -9,15 +9,20 @@ import {
 } from "@slack/types";
 import { WebAPICallResult } from "@slack/web-api";
 
-import { SlackEvent } from "./types";
+import { AppMentionEvent, SlackEvent } from "./types";
 import { delay } from "./util/delay";
 import { parseSlackRequest } from "./util/parse-slack-request";
 import { SlackTestingLibraryFixtureGenerator } from "./fixture-generator";
 import { startServer } from "./util/server";
+import { Message } from "@slack/web-api/dist/response/ChatPostMessageResponse";
+import { findTextInBlock } from "./util/find-text-in-block";
 
 interface SlackTestConstructorOptions {
   baseUrl: string;
   port?: number;
+  app?: {
+    botId: string;
+  };
   actor?: {
     teamId: string;
     userId: string;
@@ -27,6 +32,9 @@ interface SlackTestConstructorOptions {
 export interface SlackTestOptions {
   baseUrl: string;
   port: number;
+  app: {
+    botId: string;
+  };
   actor?: {
     teamId: string;
     userId: string;
@@ -38,17 +46,34 @@ type RequestLogItem = {
   data: Record<string, string | string[] | null>;
 };
 
+type MessageLogItem = {
+  message: Message;
+  channelId: string;
+};
+
 export type InterceptedRequest = {
   url: string;
   intercept: () => Partial<WebAPICallResult>;
 };
+
+type ActiveScreen =
+  | {
+      type: "view";
+      view: View;
+    }
+  | {
+      type: "channel";
+      channelId: string;
+    };
 
 export class SlackTestingLibrary {
   private initialOptions: SlackTestOptions;
   private options: SlackTestOptions;
   private requestLog: RequestLogItem[] = [];
   private server: Server | null = null;
-  private activeView: View | null = null;
+  private activeScreen: ActiveScreen | null = null;
+
+  private messageLog: MessageLogItem[] = [];
   private interceptedRequests: InterceptedRequest[] = [];
 
   static fixtures = SlackTestingLibraryFixtureGenerator;
@@ -56,6 +81,9 @@ export class SlackTestingLibrary {
   constructor(options: SlackTestConstructorOptions) {
     this.initialOptions = {
       port: 8123,
+      app: {
+        botId: "U0LAN0Z89",
+      },
       ...options,
     };
 
@@ -80,8 +108,17 @@ export class SlackTestingLibrary {
 
     this.server = await startServer({
       port: this.options.port,
-      setActiveView: (view: View) => {
-        this.activeView = view;
+      onViewChange: (view: View) => {
+        this.activeScreen = {
+          type: "view",
+          view,
+        };
+      },
+      onRecieveMessage: (message: Message, channelId: string) => {
+        this.messageLog.push({
+          message,
+          channelId,
+        });
       },
       getInterceptedRequests: () => this.interceptedRequests,
       storeRequest: (request: {
@@ -104,7 +141,7 @@ export class SlackTestingLibrary {
     });
   }
 
-  private async fireEvent(event: SlackEvent) {
+  private async fireEvent(event: SlackEvent<any>) {
     await fetch(this.options.baseUrl, {
       method: "post",
       headers: {
@@ -136,10 +173,11 @@ export class SlackTestingLibrary {
         }
 
         if (matcher.view) {
-          const { view } = parseSlackRequest(url, data);
+          const { type, ...requestData } = parseSlackRequest(url, data);
 
-          if (view) {
-            matches = view.type === matcher.view.type;
+          if (type === "view") {
+            matches =
+              ((requestData as any).view as View).type === matcher.view.type;
           }
         }
 
@@ -182,7 +220,42 @@ export class SlackTestingLibrary {
         type: "app_home_opened",
       },
       user: this.options.actor.userId,
-    } as any);
+    } as SlackEvent<any>);
+  }
+
+  openChannel(channelId: string) {
+    this.checkServerStatus();
+
+    this.activeScreen = {
+      type: "channel",
+      channelId,
+    };
+  }
+
+  async mentionApp({ channelId }: { channelId: string }) {
+    this.checkServerStatus();
+
+    if (!this.options.actor) {
+      throw new Error(
+        "Please provide an actor team ID and user ID when you initialise SlackTester"
+      );
+    }
+
+    const timestamp = Date.now();
+
+    await this.fireEvent({
+      type: "event",
+      team_id: this.options.actor.teamId,
+      event: {
+        type: "app_mention",
+        user: this.options.actor.userId,
+        team: this.options.actor.teamId,
+        text: `<@${this.options.app.botId}>`,
+        ts: (timestamp / 1000).toFixed(6),
+        channel: channelId,
+        event_ts: timestamp * 1000,
+      },
+    } as SlackEvent<AppMentionEvent>);
   }
 
   /**
@@ -194,12 +267,14 @@ export class SlackTestingLibrary {
   async interactWith(elementType: "button", label: string) {
     this.checkServerStatus();
 
-    if (!this.activeView) {
-      throw new Error("No active view");
+    if (!this.activeScreen) {
+      throw new Error("No active screen");
     }
 
-    const matchingElement = (this.activeView.blocks as KnownBlock[]).find(
-      (block) => {
+    if (this.activeScreen.type === "view") {
+      const matchingElement = (
+        this.activeScreen.view.blocks as KnownBlock[]
+      ).find((block) => {
         if (block.type !== "section") {
           return false;
         }
@@ -213,11 +288,20 @@ export class SlackTestingLibrary {
         }
 
         return true;
-      }
-    );
+      });
 
-    if (!matchingElement) {
-      throw new Error(`Unable to find ${elementType} with the label ${label}`);
+      if (!matchingElement) {
+        throw new Error(
+          `Unable to find ${elementType} with the label ${label}`
+        );
+      }
+      return;
+    }
+
+    if (this.activeScreen.type === "channel") {
+      throw new Error(
+        "The active view is currently a channel. Interacting with channels is currently unsupported."
+      );
     }
   }
 
@@ -229,26 +313,54 @@ export class SlackTestingLibrary {
   async getByText(text: string) {
     this.checkServerStatus();
 
-    if (!this.activeView) {
-      throw new Error("No active view");
+    if (!this.activeScreen) {
+      throw new Error("No active screen");
     }
 
-    const matchingElement = (this.activeView.blocks as KnownBlock[]).find(
-      (block) => {
-        if (!["section", "header"].includes(block.type)) {
-          return false;
-        }
+    if (this.activeScreen.type === "view") {
+      const matchingElement = (
+        this.activeScreen.view.blocks as KnownBlock[]
+      ).find(findTextInBlock(text));
 
-        if (!(block as SectionBlock | HeaderBlock).text?.text.includes(text)) {
-          return false;
-        }
-
-        return true;
+      if (!matchingElement) {
+        throw new Error(
+          `Unable to find the text "${text}" in the current view`
+        );
       }
-    );
+    }
 
-    if (!matchingElement) {
-      throw new Error(`Unable to find the text "${text}" in the current view`);
+    if (this.activeScreen.type === "channel") {
+      const activeChannelId = this.activeScreen.channelId;
+
+      const matchingMessage = this.messageLog.find(({ message, channelId }) => {
+        if (channelId !== activeChannelId) {
+          return false;
+        }
+
+        let matches = false;
+
+        if (message.blocks) {
+          const matchingElement = message.blocks.find((b) => {
+            return b.text?.text?.includes(text);
+          });
+
+          if (matchingElement) {
+            matches = true;
+          }
+        }
+
+        if (message.text) {
+          matches = matches || message.text.includes(text);
+        }
+
+        return matches;
+      });
+
+      if (!matchingMessage) {
+        throw new Error(
+          `Unable to find the text "${text}" in the current channel`
+        );
+      }
     }
   }
 
@@ -305,6 +417,8 @@ export class SlackTestingLibrary {
   reset() {
     this.interceptedRequests = [];
     this.requestLog = [];
+    this.messageLog = [];
+    this.activeScreen = null;
     this.options = {
       ...this.options,
       actor: this.initialOptions.actor,
