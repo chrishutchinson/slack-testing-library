@@ -1,0 +1,19 @@
+{
+  "name": "@slack-testing-library/hello-world-app-home-example",
+  "version": "1.0.0",
+  "main": "server.ts",
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node server.ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@slack/types": "^2.2.0",
+    "@slack/web-api": "^6.4.0"
+  },
+  "devDependencies": {
+    "jest": "^27.1.0",
+    "ts-jest": "^27.0.5",
+    "ts-node": "^10.2.1"
+  }
+}
