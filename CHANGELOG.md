@@ -1,3 +1,10 @@
+## [1.3.0](https://github.com/chrishutchinson/slack-testing-library/compare/1.2.0...1.3.0) (2021-09-01)
+
+
+### Features
+
+* `interactWith` sends the association action to your base API when triggered ([#6](https://github.com/chrishutchinson/slack-testing-library/issues/6)) ([4d0a0a2](https://github.com/chrishutchinson/slack-testing-library/commit/4d0a0a2acb36c1f03fa9f4234453bdfc483f2359))
+
 ## [1.2.0](https://github.com/chrishutchinson/slack-testing-library/compare/1.1.0...1.2.0) (2021-08-30)
 
 
