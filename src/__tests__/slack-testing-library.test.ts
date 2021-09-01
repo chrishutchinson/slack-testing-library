@@ -1,11 +1,13 @@
 import { View } from "@slack/types";
 import { Message } from "@slack/web-api/dist/response/ChatScheduleMessageResponse";
 import { Server } from "http";
+import fetch from "cross-fetch";
 import { SlackTestingLibrary } from "../slack-testing-library";
 import { startServer } from "../util/server";
 
 jest.mock("../util/server");
 jest.mock("http");
+jest.mock("cross-fetch");
 
 export const createMockServer = ({
   listen,
@@ -258,6 +260,181 @@ describe("SlackTestingLibrary", () => {
       await sl.openChannel("C1234567");
 
       await sl.getByText("Match: 1234");
+    });
+  });
+
+  describe("#interactWith()", () => {
+    it("should throw an error if the server hasn't been initialised", async () => {
+      const sl = new SlackTestingLibrary({
+        baseUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
+      });
+
+      await expect(sl.interactWith("button", "Label")).rejects.toThrow(
+        "Start the Slack listening server first by awaiting `sl.init()`"
+      );
+    });
+
+    it("should throw an error if an active screen hasn't been set", async () => {
+      const sl = new SlackTestingLibrary({
+        baseUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
+      });
+
+      (startServer as jest.Mock<Promise<Server>>).mockImplementation(async () =>
+        createMockServer()
+      );
+
+      await sl.init();
+
+      await expect(sl.interactWith("button", "Label")).rejects.toThrow(
+        "No active screen"
+      );
+    });
+
+    describe("active screen: view", () => {
+      it("should throw if an element with the type and label can't be found in the view", async () => {
+        const sl = new SlackTestingLibrary({
+          baseUrl:
+            "https://www.github.com/chrishutchinson/slack-testing-library",
+        });
+
+        (startServer as jest.Mock<Promise<Server>>).mockImplementation(
+          async ({ onViewChange }) => {
+            // Set the active screen
+            onViewChange({
+              blocks: [
+                {
+                  type: "section",
+                  text: {
+                    text: "Match: 1234",
+                    type: "plain_text",
+                  },
+                  accessory: {
+                    type: "button",
+                    action_id: "sample_button_action_id",
+                    text: {
+                      text: "Match: 5678",
+                      type: "plain_text",
+                    },
+                  },
+                },
+              ],
+            } as View);
+
+            return createMockServer();
+          }
+        );
+
+        await sl.init();
+
+        await expect(sl.interactWith("button", "Match: 1234")).rejects.toThrow(
+          "Unable to find button with the label 'Match: 1234'."
+        );
+      });
+
+      it("should throw if a matching element is found in the view but it doesn't have an action ID", async () => {
+        const sl = new SlackTestingLibrary({
+          baseUrl:
+            "https://www.github.com/chrishutchinson/slack-testing-library",
+        });
+
+        (startServer as jest.Mock<Promise<Server>>).mockImplementation(
+          async ({ onViewChange }) => {
+            // Set the active screen
+            onViewChange({
+              blocks: [
+                {
+                  type: "section",
+                  text: {
+                    text: "Match: 1234",
+                    type: "plain_text",
+                  },
+                  accessory: {
+                    type: "button",
+                    text: {
+                      text: "Match: 1234",
+                      type: "plain_text",
+                    },
+                  },
+                },
+              ],
+            } as View);
+
+            return createMockServer();
+          }
+        );
+
+        await sl.init();
+
+        await expect(sl.interactWith("button", "Match: 1234")).rejects.toThrow(
+          "Unable to interact with the matching button element. It does not have an associated action ID."
+        );
+      });
+
+      it("should call the URL provided in the constructor with a block action payload", async () => {
+        const sl = new SlackTestingLibrary({
+          baseUrl:
+            "https://www.github.com/chrishutchinson/slack-testing-library",
+          actor: {
+            teamId: "T1234567",
+            userId: "U1234567",
+          },
+        });
+
+        (startServer as jest.Mock<Promise<Server>>).mockImplementation(
+          async ({ onViewChange }) => {
+            // Set the active screen
+            onViewChange({
+              blocks: [
+                {
+                  type: "section",
+                  text: {
+                    text: "Match: 1234",
+                    type: "plain_text",
+                  },
+                  accessory: {
+                    type: "button",
+                    action_id: "sample_button_action_id",
+                    text: {
+                      text: "Match: 1234",
+                      type: "plain_text",
+                    },
+                  },
+                },
+              ],
+            } as View);
+
+            return createMockServer();
+          }
+        );
+
+        await sl.init();
+
+        await sl.interactWith("button", "Match: 1234");
+
+        expect(fetch).toHaveBeenCalledWith(
+          "https://www.github.com/chrishutchinson/slack-testing-library",
+          {
+            method: "post",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              payload: JSON.stringify({
+                user: {
+                  id: "U1234567",
+                  team_id: "T1234567",
+                },
+                type: "block_actions",
+                actions: [
+                  {
+                    action_id: "sample_button_action_id",
+                  },
+                ],
+              }),
+            }),
+          }
+        );
+      });
     });
   });
 });
