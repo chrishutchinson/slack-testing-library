@@ -1,6 +1,6 @@
 import { Server } from "http";
 import fetch from "cross-fetch";
-import { Button, KnownBlock, View } from "@slack/types";
+import { Button, KnownBlock, SectionBlock, View } from "@slack/types";
 import { Message } from "@slack/web-api/dist/response/ChatPostMessageResponse";
 import { WebAPICallResult } from "@slack/web-api";
 
@@ -145,6 +145,31 @@ export class SlackTestingLibrary {
     });
   }
 
+  private async fireInteraction(actionId: string) {
+    this.checkActorStatus();
+
+    await fetch(this.options.baseUrl, {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        payload: JSON.stringify({
+          user: {
+            id: this.options.actor!.userId,
+            team_id: this.options.actor!.teamId,
+          },
+          type: "block_actions",
+          actions: [
+            {
+              action_id: actionId,
+            },
+          ],
+        }),
+      }),
+    });
+  }
+
   private async checkRequestLog(
     matcher: Partial<{
       url: string;
@@ -242,25 +267,28 @@ export class SlackTestingLibrary {
     }
   }
 
-  /**
-   * Opens the "App Home" view
-   */
-  async openHome() {
-    this.checkServerStatus();
-
+  private checkActorStatus() {
     if (!this.options.actor) {
       throw new Error(
         "Please provide an actor team ID and user ID when you initialise SlackTester"
       );
     }
+  }
+
+  /**
+   * Opens the "App Home" view
+   */
+  async openHome() {
+    this.checkServerStatus();
+    this.checkActorStatus();
 
     await this.fireEvent({
       type: "event",
-      team_id: this.options.actor.teamId,
+      team_id: this.options.actor!.teamId,
       event: {
         type: "app_home_opened",
       },
-      user: this.options.actor.userId,
+      user: this.options.actor!.userId,
     } as SlackEvent<any>);
   }
 
@@ -275,22 +303,17 @@ export class SlackTestingLibrary {
 
   async mentionApp({ channelId }: { channelId: string }) {
     this.checkServerStatus();
-
-    if (!this.options.actor) {
-      throw new Error(
-        "Please provide an actor team ID and user ID when you initialise SlackTester"
-      );
-    }
+    this.checkActorStatus();
 
     const timestamp = Date.now();
 
     await this.fireEvent({
       type: "event",
-      team_id: this.options.actor.teamId,
+      team_id: this.options.actor!.teamId,
       event: {
         type: "app_mention",
-        user: this.options.actor.userId,
-        team: this.options.actor.teamId,
+        user: this.options.actor!.userId,
+        team: this.options.actor!.teamId,
         text: `<@${this.options.app.botId}>`,
         ts: (timestamp / 1000).toFixed(6),
         channel: channelId,
@@ -333,9 +356,21 @@ export class SlackTestingLibrary {
 
       if (!matchingElement) {
         throw new Error(
-          `Unable to find ${elementType} with the label ${label}`
+          `Unable to find ${elementType} with the label '${label}'.`
         );
       }
+
+      const { action_id } = (matchingElement as SectionBlock)
+        .accessory as Button;
+
+      if (!action_id) {
+        throw new Error(
+          `Unable to interact with the matching ${elementType} element. It does not have an associated action ID.`
+        );
+      }
+
+      await this.fireInteraction(action_id);
+
       return;
     }
 
@@ -391,24 +426,22 @@ export class SlackTestingLibrary {
    *
    * @returns boolean Whether or not a view has been published
    */
-  async hasViewPublish() {
+  async hasViewPublish(count = 1) {
     this.checkServerStatus();
 
     const requestLog = await this.checkRequestLog({
       url: "/slack/api/views.publish",
     });
 
-    if (requestLog.length === 0) {
+    if (requestLog.length === 0 && count !== 0) {
       throw new Error("Did not find any matching view publishes");
     }
 
-    if (requestLog.length > 1) {
+    if (requestLog.length !== count) {
       throw new Error(
-        "Found more than one matching view publishes. Use `hasManyViewPublish` or `hasViewPublish(count)`."
+        `Did not find ${count} matching view publishes (got ${requestLog.length}).`
       );
     }
-
-    return true;
   }
 
   /**
