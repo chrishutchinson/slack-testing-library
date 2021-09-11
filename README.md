@@ -22,9 +22,11 @@ Slack Testing Library allows you to run integration tests against your Slack app
 
 It is designed to use simple methods that describe how real users will interact with your Slack app (e.g. `openHome()` or `interactWith("button")`), helping you to test the expected behaviour of your application, not the implementation details.
 
-### Active screen
+### Active screen
 
 Slack Testing Library maintains an understanding of the currently active screen, just like a user in Slack would. By having an 'active screen', interaction and assertions can be made against that screen. Using methods like `openHome()` or `openChannel()` will change the active screen accordingly.
+
+In-screen views, like modals, will also be treated as the "active screen".
 
 ## Getting started
 
@@ -38,7 +40,7 @@ Slack Testing Library maintains an understanding of the currently active screen,
    });
    ```
 
-> Note: if you pass a custom `port` value to the `SlackTestingLibrary` constructor, change the port provided here in the `slackApiUrl`.
+   > Note: if you pass a custom `port` value to the `SlackTestingLibrary` constructor, change the port provided here in the `slackApiUrl`.
 
 2. Import the library and initialize an instance of Slack Testing Library at the top of your tests:
 
@@ -167,9 +169,9 @@ await sl.mentionApp({
 await sl.getByText("Some text");
 ```
 
-### Finding elements and interacting with them
+### Finding elements and interacting
 
-#### `getByText(): Promise<void>`
+#### `getByText(text: string): Promise<void>`
 
 This allows you to find a specific string or piece of text within a the current active view (e.g. after your app has called `views.publish` for the app home).
 
@@ -180,13 +182,21 @@ await sl.getByText("Hello, world!");
 
 > Note: At the moment this is limited to "section" and "header" blocks, and can only look at the App Home view, or within standard messages in channels.
 
-#### `interactWith(): Promise<void>`
+#### `interactWith(elementType: "button", label: string): Promise<void>`
 
 This allows you to find an interactive element (e.g. buttons) and interact with it.
 
 ```ts
 // This would click the button with the text "Refresh", and fail if the button could not be found
 await sl.interactWith("button", "Refresh");
+```
+
+#### `runShortcut(callbackId: string): Promise<void>`
+
+This allows you to run a [Slack Shortcut](https://slack.com/intl/en-gb/help/articles/360004063011-Work-with-apps-in-Slack-using-shortcuts) that your App provides.
+
+```ts
+await sl.runShortcut("my_shortcuts_callback_id");
 ```
 
 ## Fixtures
