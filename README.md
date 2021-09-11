@@ -30,13 +30,13 @@ Slack Testing Library maintains an understanding of the currently active screen,
 
 1. Set up your API server to route Slack API requests to the Slack Testing Library intercept server
 
-```ts
-import { WebClient } from "@slack/web-api";
+   ```ts
+   import { WebClient } from "@slack/web-api";
 
-return new WebClient(botToken, {
-  slackApiUrl: "http://localhost:8123/slack/api",
-});
-```
+   return new WebClient(botToken, {
+     slackApiUrl: "http://localhost:8123/slack/api",
+   });
+   ```
 
 > Note: if you pass a custom `port` value to the `SlackTestingLibrary` constructor, change the port provided here in the `slackApiUrl`.
 
@@ -47,7 +47,11 @@ return new WebClient(botToken, {
 
    const sl = new SlackTestingLibrary({
      // This is your URL + path to your API server that handles Slack events
-     baseUrl: "http://localhost:3000/api/event",
+     eventUrl: "http://localhost:3000/api/event",
+
+     // This is your URL + path to your API server that handles Slack interactions
+     //  (this might be the same as the event URL, depending on how your app is configured)
+     interactionUrl: "http://localhost:3000/api/interaction",
    });
    ```
 
@@ -125,7 +129,8 @@ This triggers the `app_home_opened` event, and waits for a `views.publish` reque
 
 ```ts
 const sl = new SlackTestingLibrary({
-  baseUrl: "https://localhost:3000/api/event",
+  eventUrl: "https://localhost:3000/api/event",
+  interactionUrl: "https://localhost:3000/api/interaction",
   actor: {
     userId: "U12345678",
     teamId: "T12345678",

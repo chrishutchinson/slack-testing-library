@@ -12,7 +12,8 @@ import { startServer } from "./util/server";
 import { findTextInBlock } from "./util/find-text-in-block";
 
 interface SlackTestConstructorOptions {
-  baseUrl: string;
+  interactionUrl?: string;
+  eventUrl?: string;
   port?: number;
   app?: {
     botId: string;
@@ -24,7 +25,8 @@ interface SlackTestConstructorOptions {
 }
 
 export interface SlackTestOptions {
-  baseUrl: string;
+  interactionUrl?: string;
+  eventUrl?: string;
   port: number;
   app: {
     botId: string;
@@ -135,8 +137,28 @@ export class SlackTestingLibrary {
     });
   }
 
+  private getInteractionUrl() {
+    if (!this.options.interactionUrl) {
+      throw new Error(
+        "Please initialise SlackTestingLibrary with an interactionUrl argument"
+      );
+    }
+
+    return this.options.interactionUrl;
+  }
+
+  private getEventUrl() {
+    if (!this.options.eventUrl) {
+      throw new Error(
+        "Please initialise SlackTestingLibrary with an eventUrl argument"
+      );
+    }
+
+    return this.options.eventUrl;
+  }
+
   private async fireEvent(event: SlackEvent<any>) {
-    await fetch(this.options.baseUrl, {
+    await fetch(this.getEventUrl(), {
       method: "post",
       headers: {
         "Content-Type": "application/json",
@@ -148,7 +170,7 @@ export class SlackTestingLibrary {
   private async fireInteraction(actionId: string) {
     this.checkActorStatus();
 
-    await fetch(this.options.baseUrl, {
+    await fetch(this.getInteractionUrl(), {
       method: "post",
       headers: {
         "Content-Type": "application/json",
@@ -167,6 +189,37 @@ export class SlackTestingLibrary {
           ],
         }),
       }),
+    });
+  }
+
+  private async fireShortcut(callbackId: string) {
+    const timestamp = Date.now();
+
+    await fetch(this.getInteractionUrl(), {
+      method: "post",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: `payload=${encodeURIComponent(
+        JSON.stringify({
+          type: "shortcut",
+          action_ts: (timestamp / 1000).toFixed(6),
+          team: {
+            id: "T27FHQEKB",
+            domain: "chris-testing",
+          },
+          user: {
+            id: "U27DSMR43",
+            username: "chris",
+            team_id: "T27FHQEKB",
+          },
+          is_enterprise_install: false,
+          enterprise: null,
+          callback_id: callbackId,
+          trigger_id:
+            "2480645045762.75527830657.ea8211a7a61fcc21efbb3842d9b4bf8b",
+        })
+      )}`,
     });
   }
 
@@ -322,6 +375,10 @@ export class SlackTestingLibrary {
     } as SlackEvent<AppMentionEvent>);
   }
 
+  async runShortcut(callbackId: string) {
+    await this.fireShortcut(callbackId);
+  }
+
   /**
    * Looks for and interacts with (e.g. clicks) the element matching the params.
    *
@@ -379,6 +436,8 @@ export class SlackTestingLibrary {
         "The active view is currently a channel. Interacting with channels is currently unsupported."
       );
     }
+
+    return;
   }
 
   /**

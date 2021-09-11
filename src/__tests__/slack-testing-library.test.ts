@@ -30,7 +30,8 @@ describe("SlackTestingLibrary", () => {
   describe("constructor", () => {
     it("should return an instance of SlackTestingLibrary when correctly initialized", () => {
       const sl = new SlackTestingLibrary({
-        baseUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
+        eventUrl:
+          "https://www.github.com/chrishutchinson/slack-testing-library",
         actor: {
           teamId: "T1234567",
           userId: "U1234567",
@@ -45,7 +46,8 @@ describe("SlackTestingLibrary", () => {
   describe("#init()", () => {
     it("should create a HTTP server and start listening when called", async () => {
       const sl = new SlackTestingLibrary({
-        baseUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
+        eventUrl:
+          "https://www.github.com/chrishutchinson/slack-testing-library",
       });
 
       (startServer as jest.Mock<Promise<Server>>).mockImplementation(async () =>
@@ -61,7 +63,8 @@ describe("SlackTestingLibrary", () => {
 
     it("should listen on a custom port if provided", async () => {
       const sl = new SlackTestingLibrary({
-        baseUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
+        eventUrl:
+          "https://www.github.com/chrishutchinson/slack-testing-library",
         port: 4001,
       });
 
@@ -80,7 +83,8 @@ describe("SlackTestingLibrary", () => {
   describe("#teardown()", () => {
     it("should stop the server if one is running", async () => {
       const sl = new SlackTestingLibrary({
-        baseUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
+        eventUrl:
+          "https://www.github.com/chrishutchinson/slack-testing-library",
       });
 
       const mockClose = jest.fn((cb) => cb());
@@ -102,7 +106,8 @@ describe("SlackTestingLibrary", () => {
   describe("#getByText()", () => {
     it("should throw an error if the server hasn't been initialised", async () => {
       const sl = new SlackTestingLibrary({
-        baseUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
+        eventUrl:
+          "https://www.github.com/chrishutchinson/slack-testing-library",
       });
 
       await expect(sl.getByText("Sample")).rejects.toThrow(
@@ -113,7 +118,7 @@ describe("SlackTestingLibrary", () => {
 
   it("should throw an error if an active screen hasn't been set", async () => {
     const sl = new SlackTestingLibrary({
-      baseUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
+      eventUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
     });
 
     (startServer as jest.Mock<Promise<Server>>).mockImplementation(async () =>
@@ -128,7 +133,8 @@ describe("SlackTestingLibrary", () => {
   describe("activeScreen: view", () => {
     it("should throw if the provided text isn't in the view", async () => {
       const sl = new SlackTestingLibrary({
-        baseUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
+        eventUrl:
+          "https://www.github.com/chrishutchinson/slack-testing-library",
         actor: {
           teamId: "T1234567",
           userId: "U1234567",
@@ -165,7 +171,8 @@ describe("SlackTestingLibrary", () => {
 
     it("should resolve if the provided text is in the view", async () => {
       const sl = new SlackTestingLibrary({
-        baseUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
+        eventUrl:
+          "https://www.github.com/chrishutchinson/slack-testing-library",
         actor: {
           teamId: "T1234567",
           userId: "U1234567",
@@ -202,7 +209,8 @@ describe("SlackTestingLibrary", () => {
   describe("activeScreen: channel", () => {
     it("should throw if the provided text isn't in any messages in the channel", async () => {
       const sl = new SlackTestingLibrary({
-        baseUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
+        eventUrl:
+          "https://www.github.com/chrishutchinson/slack-testing-library",
         actor: {
           teamId: "T1234567",
           userId: "U1234567",
@@ -234,7 +242,8 @@ describe("SlackTestingLibrary", () => {
 
     it("should resolve if the provided text is in the view", async () => {
       const sl = new SlackTestingLibrary({
-        baseUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
+        eventUrl:
+          "https://www.github.com/chrishutchinson/slack-testing-library",
         actor: {
           teamId: "T1234567",
           userId: "U1234567",
@@ -266,7 +275,8 @@ describe("SlackTestingLibrary", () => {
   describe("#interactWith()", () => {
     it("should throw an error if the server hasn't been initialised", async () => {
       const sl = new SlackTestingLibrary({
-        baseUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
+        eventUrl:
+          "https://www.github.com/chrishutchinson/slack-testing-library",
       });
 
       await expect(sl.interactWith("button", "Label")).rejects.toThrow(
@@ -276,7 +286,8 @@ describe("SlackTestingLibrary", () => {
 
     it("should throw an error if an active screen hasn't been set", async () => {
       const sl = new SlackTestingLibrary({
-        baseUrl: "https://www.github.com/chrishutchinson/slack-testing-library",
+        eventUrl:
+          "https://www.github.com/chrishutchinson/slack-testing-library",
       });
 
       (startServer as jest.Mock<Promise<Server>>).mockImplementation(async () =>
@@ -293,7 +304,7 @@ describe("SlackTestingLibrary", () => {
     describe("active screen: view", () => {
       it("should throw if an element with the type and label can't be found in the view", async () => {
         const sl = new SlackTestingLibrary({
-          baseUrl:
+          eventUrl:
             "https://www.github.com/chrishutchinson/slack-testing-library",
         });
 
@@ -333,7 +344,7 @@ describe("SlackTestingLibrary", () => {
 
       it("should throw if a matching element is found in the view but it doesn't have an action ID", async () => {
         const sl = new SlackTestingLibrary({
-          baseUrl:
+          eventUrl:
             "https://www.github.com/chrishutchinson/slack-testing-library",
         });
 
@@ -372,7 +383,7 @@ describe("SlackTestingLibrary", () => {
 
       it("should call the URL provided in the constructor with a block action payload", async () => {
         const sl = new SlackTestingLibrary({
-          baseUrl:
+          eventUrl:
             "https://www.github.com/chrishutchinson/slack-testing-library",
           actor: {
             teamId: "T1234567",

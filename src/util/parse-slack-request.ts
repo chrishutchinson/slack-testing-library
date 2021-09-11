@@ -29,6 +29,7 @@ export const parseSlackRequest = (
     } => {
   switch (url) {
     case "/slack/api/views.publish":
+    case "/slack/api/views.open":
       if (!data.view || data.view.length === 0) {
         throw new Error("Invalid request for `views.publish`");
       }
