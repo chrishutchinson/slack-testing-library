@@ -1,6 +1,6 @@
 {
   "name": "slack-testing-library",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "A mock server and library for testing interactive Slack apps",
   "repository": "git://github.com/chrishutchinson/slack-testing-library.git",
   "main": "dist/slack-testing-library.js",
