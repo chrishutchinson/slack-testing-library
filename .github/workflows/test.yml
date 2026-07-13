@@ -4,17 +4,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
-          node-version: "14"
+          node-version: "24"
+          cache: "pnpm"
 
       - name: Install dependencies
-        run: yarn
+        run: pnpm install --frozen-lockfile
 
       - name: Test
-        run: yarn test
+        run: pnpm test
